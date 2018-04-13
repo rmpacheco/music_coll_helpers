@@ -1,0 +1,35 @@
+dira = itunesdir 
+dirb = dropboxmusicdir  
+foreach dir in dirb 	
+	addtodropboxhash(dir)  
+foreach dir in dira 	
+	processitunesdir(dir)  
+
+def addtodropboxhash(directory)
+	dbhash.add(directory.name, directory.path) 	
+	foreach dir in directory 		
+		addtodropboxhash(dir)  
+
+def processitunesdir(directory)
+	dbdir = find dropbox dir 	
+	if dbdir = null
+		log("no dropbox dir found for " + directory + ".  Skipping.")
+		
+	else
+		if dbdir contains "mp3" dir
+			log(dbdir + " has an mp3 directory, so it appears to have already been processed.  Skipping.")
+		else 
+			if dbdir contains "aac" dir
+			    	log(dbdir + " has an aac directory, so it appears to have already been processed.  Skipping.")
+		    
+			else
+				foreach file in directory 		
+					dbfile = find equivalent file in dropboxdir 
+				 	if file.size >=  dbfile
+						log(file + " is larger than " + dbfile + ". replacing")
+						copy file to dbdir
+						rename dbfile to dbfile.replaced
+					else
+						log(file + " is smaller than " + dbfile" + ". skipping")
+
+	
