@@ -1,16 +1,20 @@
 import os
 import logging
 import re
+import sys
 from shutil import copyfile
 
 logger = logging.getLogger('i2nsrec_count_error_check')
-hdlr = logging.FileHandler('/home/roman/i2nsrec_count_error_check.log')
+hdlr = logging.FileHandler('i2nsrec_count_error_check.log')
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr) 
 logger.setLevel(logging.WARNING)
 
-dirb = "/mnt/d/Dropbox/Music/General Collection"
+if len(sys.argv) < 2:
+	print("Please provide Dropbox directory")
+	exit(-1)
+dirb = sys.argv[1] #"/mnt/d/Dropbox/Music/General Collection"
 
 dbhash = {}
 
@@ -46,6 +50,7 @@ def error_check_dir(dirName, parentDir):
 				mp3Count+=1
 		#if file count does not match, log error
 		if aacCount != mp3Count:
+			print(path)
 			logger.error("There are " +str(mp3Count) + " mp3s in '" + os.path.join(path, "mp3") + "', but only " + str(aacCount) + " AAC/MP3 files in '" + path + "'" )
 		#else, log info
 		else:
