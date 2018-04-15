@@ -43,12 +43,6 @@ def get_immediate_files(a_dir):
     # logger.info("Dir: " + a_dir)
     return [name for name in os.listdir(a_dir)
             if os.path.isfile(os.path.join(a_dir, name))]
-    # for n in os.listdir(a_dir):
-    # 	prlogger.infoint("Item: " + n)
-    # 	if os.path.isfile(n):
-    # 		logger.info("it's a file!")
-    # 	else:
-    # 		logger.info("it's NOT a file!")
 
 
 def getDropboxEquivPath(dir):
@@ -77,16 +71,6 @@ def getFirstFileWithSongNameContaining(dir, songName, extension):
                 sn = file
             if songName.lower().strip() == sn.lower().strip():
                 return file
-
-    # for n in os.listdir(dir):
-    # 	if os.path.isfile(os.path.join(dir, n)):
-    # 		# we found a file
-    # 		songName = getSongNameFromFile(n)
-    # 		if not songName:
-    # 			songName = n
-    # 		if name.lower() in songName.lower():
-    # 			return n
-
 
 def getSongNameFromFile(file):
     m = re.search('^[0-9][0-9-]* (.+)\.[0-9a-zA-Z]{2,4}$', file)
@@ -124,93 +108,63 @@ def fileCount(path, ext):
 
 def processitunesdir(dirName, parentDir):
     path = os.path.join(parentDir, dirName)
-    dbPath = getDropboxEquivPath(dirName)
-    if not dbPath:
-        # remove /mnt/d/iTunes/iTunes Media/Music from itunes path to make your new path
-        ldira = len(dira)
-        dbPath = os.path.join(dirb, path[ldira+1:])
-        logger.info("new dropbox path: " + dbPath)
-        logger.warning("no dropbox dir found for " + path +
-                       ".  Creating new directory at " + dbPath)
-        os.makedirs(dbPath)
-    mp3Dir = os.path.join(dbPath, "mp3")
-    if hasSubDirNamed(dbPath, "mp3"):
-        if not os.listdir(mp3Dir):
-            logger.warning("found empty mp3 dir in " +
-                           dbPath + "...deleting it")
-            os.rmdir(mp3Dir)
-        else:
-            logger.warning(
-                dbPath + " has a non-empty mp3 directory, so it appears to have already been processed.  Skipping.")
-    else:
-        if hasSubDirNamed(dbPath, "aac"):
-            logger.warning(
-                dbPath + " has an aac directory, so it appears to have already been processed.  Skipping.")
-        else:
-            # if # of aac files from itunes is > # of aac files already in dropbox
+    logger.info("path is " + path)
+    pathaacfc = fileCount(path, ".m4a")
+    pathmp3fc = fileCount(path, ".mp3")
+    pathfc = pathaacfc+pathmp3fc
+    
+    if pathfc  ==0:
+        logger.info("No itunes files to move in " + path)
+    else: 
+    
+        dbPath = getDropboxEquivPath(dirName)
 
-            if (fileCount(path, ".mp3") + fileCount(path, ".m4a")) == (fileCount(dbPath, ".m4a") + fileCount(dbPath, ".mp3")):
-                # move all mp3 files out
-                logger.info(dbPath + ": moving existing files")
-                move_mp3s(dbPath)
-                # replace with aac files
-                logger.info(dbPath + ": replacing with itunes files")
-                for f in get_immediate_files(path):
-                    fPath = os.path.join(path, f)
-                    copyfile(fPath, os.path.join(dbPath, f))
+        if not dbPath:
+            # remove /mnt/d/iTunes/iTunes Media/Music from itunes path to make your new path
+            ldira = len(dira)
+            dbPath = os.path.join(dirb, path[ldira:].strip("/"))
+            logger.info("new dropbox path: " + dbPath)
+            logger.warning("no dropbox dir found for " + path +
+                           ".  Creating new directory at " + dbPath)
+            os.makedirs(dbPath)
+
+        logger.info("dropbox path is " + dbPath)
+        mp3Dir = os.path.join(dbPath, "mp3")
+        if hasSubDirNamed(dbPath, "mp3"):
+            if not os.listdir(mp3Dir):
+                logger.warning("found empty mp3 dir in " +
+                               dbPath + "...deleting it")
+                os.rmdir(mp3Dir)
             else:
-                logger.warning("file count mismatch in '" + dbPath + "'.  Skipping")
-
-
-            if fileCount(path, ".m4a") > fileCount(dbPath, ".m4a"):
-                # move all mp3 files out
-                logger.info(dbPath + ": moving all mp3 files")
-                move_mp3s(dbPath)
-                # replace with aac files
-                logger.info(dbPath + ": replacing with aac files")
-                for f in get_immediate_files(path):
-                    fPath = os.path.join(path, f)
-                    copyfile(fPath, os.path.join(dbPath, f))
+                logger.warning(
+                    dbPath + " has a non-empty mp3 directory, so it appears to have already been processed.  Skipping.")
+        else:
+            if hasSubDirNamed(dbPath, "aac"):
+                logger.warning(
+                    dbPath + " has an aac directory, so it appears to have already been processed.  Skipping.")
             else:
-                logger.warning("not enough aac files in " +
-                               dbPath + " to warrant move.  Skipping")
+                # if # of aac files from itunes is > # of aac files already in dropbox
+                dbaacfc = fileCount(dbPath, ".m4a")
+                dbmp3fc = fileCount(dbPath, ".mp3")
+                dbfc = dbaacfc+dbmp3fc
+                if pathfc == dbfc and (pathaacfc != dbaacfc or pathmp3fc != dbmp3fc):
+                    # move all mp3 files out
+                    logger.info(dbPath + ": moving existing files")
+                    move_mp3s(dbPath)
+                    # replace with aac files
+                    logger.info(dbPath + ": replacing with itunes files")
+                    for f in get_immediate_files(path):
+                        fPath = os.path.join(path, f)
+                        copyfile(fPath, os.path.join(dbPath, f))
+                elif dbfc == 0:     
+                    logger.info(dbPath + ": new directory, moving itunes music over")
+                    for f in get_immediate_files(path):
+                        fPath = os.path.join(path, f)
+                        copyfile(fPath, os.path.join(dbPath, f))
+                else:
+                    logger.warning("file count mismatch in '" + dbPath + "'.  Skipping")
 
-            # #didReplaceAtLeastOne = False
-            # logger.info("searching " + path + " for files...")
-            # for f in get_immediate_files(path):
-            # 	fPath = os.path.join(path, f)
-            # 	songName = getSongNameFromFile(f)
-            # 	if not songName:
-            # 		logger.error("Could not determine song name for " + fPath + ". skipping")
-            # 	else:
-            # 		dbfile = getFirstFileWithSongNameContaining(dbPath, songName, "m4a")
-            # 		if dbfile:
-            # 			logger.info("AAC file already exists for " + f + ".  skipping")
-            # 		else:
-            # 			dbfile = getFirstFileWithSongNameContaining(dbPath, songName, "mp3")
-            # 			if not dbfile:
-            # 				logger.warning("Could not find dropbox equivalent for " + fPath + ". Copying new")
-            # 				copyfile(fPath, os.path.join(dbPath, f))
-            # 			else:
-            # 				dbFilePath = os.path.join(dbPath, dbfile)
-            # 				logger.info("The equiv dropbox file seems to be " + dbFilePath + ".  Replacing.")
-            # 				#if getFileSize(fPath) >=  getFileSize(dbFilePath):
-            # 				#	logger.warning(f + " is larger than " + dbfile + ". replacing")
-            # 				#	didReplaceAtLeastOne = True
-            # 				if not os.path.exists(os.path.join(dbPath, "mp3")):
-            # 					os.makedirs(os.path.join(dbPath, "mp3"))
-            # 				os.rename(dbFilePath,  dbPath + "/mp3/" + dbfile)
-            # 				copyfile(fPath, os.path.join(dbPath, f))
-
-            # 				# else:
-            # 				# 	if didReplaceAtLeastOne:
-            # 				# 		logger.warning(f + " is smaller than " + dbfile + ", but at least one other MP3 file was replaced in this dir, so replacing this one as well.")
-            # 				# 		if not os.path.exists(os.path.join(dbPath, "mp3")):
-            # 				# 			os.makedirs(os.path.join(dbPath, "mp3"))
-            # 				# 		os.rename(dbFilePath,  dbPath + "/mp3/" + dbfile)
-            # 				# 		copyfile(fPath, os.path.join(dbPath, f))
-            # 				# 	else:
-            # 				# 		logger.warning(f + " is smaller than " + dbFilePath + ". skipping")
+        
     for dir in get_immediate_subdirectories(path):
         processitunesdir(dir, path)
 

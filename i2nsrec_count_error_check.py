@@ -35,6 +35,7 @@ def error_check_dir(dirName, parentDir):
 		return
 	path = os.path.join(parentDir, dirName)
 	logger.info("Error checking '" + path + "'")
+	print("Error checking '" + path + "'")
 	if not hasSubDirNamed(path, "mp3"):
 		logger.info(path + " does not have an MP3 directory.  Skipping.")
 	else:
