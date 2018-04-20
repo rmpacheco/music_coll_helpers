@@ -9,7 +9,7 @@ hdlr = logging.FileHandler('i2nsrec.log')
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 
 if len(sys.argv) < 2:
     print("Please provide an iTunes Directory and a Dropbox directory")
@@ -136,33 +136,36 @@ def processitunesdir(dirName, parentDir):
                                dbPath + "...deleting it")
                 os.rmdir(mp3Dir)
             else:
-                logger.warning(
+                logger.info(
                     dbPath + " has a non-empty mp3 directory, so it appears to have already been processed.  Skipping.")
         else:
             if hasSubDirNamed(dbPath, "aac"):
-                logger.warning(
+                logger.info(
                     dbPath + " has an aac directory, so it appears to have already been processed.  Skipping.")
             else:
                 # if # of aac files from itunes is > # of aac files already in dropbox
                 dbaacfc = fileCount(dbPath, ".m4a")
                 dbmp3fc = fileCount(dbPath, ".mp3")
                 dbfc = dbaacfc+dbmp3fc
-                if pathfc == dbfc and (pathaacfc != dbaacfc or pathmp3fc != dbmp3fc):
-                    # move all mp3 files out
-                    logger.info(dbPath + ": moving existing files")
-                    move_mp3s(dbPath)
-                    # replace with aac files
-                    logger.info(dbPath + ": replacing with itunes files")
-                    for f in get_immediate_files(path):
-                        fPath = os.path.join(path, f)
-                        copyfile(fPath, os.path.join(dbPath, f))
+                if pathfc == dbfc:
+                    if pathaacfc == dbaacfc and pathmp3fc == dbmp3fc:
+                        logger.info("No difference in file count and file types for " + dbPath + ".  Skipping.")
+                    else:
+                        # move all mp3 files out
+                        logger.info(dbPath + ": moving existing files")
+                        move_mp3s(dbPath)
+                        # replace with aac files
+                        logger.info(dbPath + ": replacing with itunes files")
+                        for f in get_immediate_files(path):
+                            fPath = os.path.join(path, f)
+                            copyfile(fPath, os.path.join(dbPath, f))
                 elif dbfc == 0:     
                     logger.info(dbPath + ": new directory, moving itunes music over")
                     for f in get_immediate_files(path):
                         fPath = os.path.join(path, f)
                         copyfile(fPath, os.path.join(dbPath, f))
                 else:
-                    logger.warning("file count mismatch in '" + dbPath + "'.  Skipping")
+                    logger.error("file count mismatch in '" + dbPath + "'.  Skipping")
 
         
     for dir in get_immediate_subdirectories(path):
