@@ -43,8 +43,8 @@ def hasSubDirNamed(dir, name):
 
 
 def getEquivItunesDir(path):
-        # remove dropBoxDir from path to make your new path
-        # /mnt/d/Dropbox/Music/General Collection/
+    # remove dropBoxDir from path to make your new path
+    # /mnt/d/Dropbox/Music/General Collection/
     ldropBoxDir = len(dropBoxDir)
     dir = path[ldropBoxDir+1:]
     if dir.lower() in i2hash:
@@ -130,12 +130,4 @@ elif len(sys.argv) > 1:
     dropBoxDir = sys.argv[1]
 else:
     print("Check args")
-# if len(sys.argv) < 2:
-# 	print("Please provide an iTunes Directory and a Dropbox directory")
-# 	exit(-1)
-# if len(sys.argv) < 3:
-# 	print("Please provide a Dropbox directory")
-# 	exit(-1)
-
-# for dir in get_immediate_subdirectories(dirb):
 replace_aac_top(dropBoxDir)
